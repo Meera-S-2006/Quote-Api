@@ -23,6 +23,10 @@ It generates aesthetic SVG quotes that you can display anywhere — especially i
 
 ## ⚡ Usage 
 
+```
+<img src="https://meera-quote-api.vercel.app/" />
+```
+---
 
 ## 🧠 Features
 - Beautiful **SVG quote generator**
