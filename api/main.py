@@ -109,14 +109,17 @@ def make_svg(text):
   <text x="680" y="230" font-size="26" opacity="0.85">💗</text>
 
   
-<g transform="translate(600, 20) scale(0.9)">  
-    <circle cx="40" cy="40" r="32" fill="#ffebf7" stroke="#ff9ed2" stroke-width="2"/>  
-    <circle cx="28" cy="35" r="5" fill="#555"/>  
-    <circle cx="52" cy="35" r="5" fill="#555"/>  
-    <path d="M28 55 Q40 65 52 55" stroke="#ff66a8" stroke-width="3" fill="none" stroke-linecap="round"/>  
-  </g>  
-  
-  
+
+  <g transform="translate(600, 20) scale(0.9)">
+    <image 
+        href="https://envs.sh/xYJ.png"
+        x="0"
+        y="0"
+        width="80"
+        height="80"
+    />
+</g>
+
   <text x="48" y="64"
         font-size="28"
         font-weight="700"
