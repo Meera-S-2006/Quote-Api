@@ -1,5 +1,5 @@
 
-IMAGES_url = [
+IMAGES_URL = [
   "", 
   "" 
 ] 
