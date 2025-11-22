@@ -12,7 +12,35 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 FACTS_PATH = os.path.join(BASE_DIR, "facts.json")
 
+import base64
+import requests
+import random
+from io import BytesIO
 
+
+def get_random_image_base64():
+    url = random.choice(Images_Url)
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+
+        img_bytes = response.content
+
+        encoded = base64.b64encode(img_bytes).decode("utf-8")
+
+        content_type = response.headers.get("Content-Type", "image/png")
+        if "/" in content_type:
+            _, img_type = content_type.split("/")
+        else:
+            img_type = "png"
+
+        base64_data = f"data:image/{img_type};base64,{encoded}"
+
+        return base64_data
+
+    except Exception as e:
+        print("Error:", e)
+        return None
 
 
 def load_facts():
@@ -38,7 +66,8 @@ from xml.sax.saxutils import escape
 
 def make_svg(text):
     t = escape(text)
-    Png = random.choice(Base64Codes) 
+    Png = get_random_image_base64()
+    
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="250" viewBox="0 0 760 250">
 
