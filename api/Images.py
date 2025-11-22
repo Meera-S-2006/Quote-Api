@@ -1,5 +1,5 @@
 
-IMAGES_URL = [
+Images_Url = [
   "https://envs.sh/-zJ.jpeg", 
   "https://envs.sh/-zs.jpeg", 
 "https://envs.sh/-zN.jpeg", 
