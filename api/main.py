@@ -22,29 +22,78 @@ Images_Url = [
 ]
 
 
+import base64
+import base64
+import random
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from urllib3.exceptions import ProtocolError, NewConnectionError
+from requests.exceptions import RequestException
+
+# keep Images_Url defined somewhere above
+
+_session = None
+def _build_session():
+    s = requests.Session()
+    retries = Retry(
+        total=3,
+        backoff_factor=0.6,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET", "HEAD", "OPTIONS"])
+    )
+    s.mount("https://", HTTPAdapter(max_retries=retries))
+    s.mount("http://", HTTPAdapter(max_retries=retries))
+    s.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "image/*,*/*;q=0.8",
+        "Connection": "close",
+    })
+    return s
+
 def get_random_image_base64():
-    url = random.choice(Images_Url)
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
+    global _session
+    if _session is None:
+        _session = _build_session()
 
-        img_bytes = response.content
-        encoded = base64.b64encode(img_bytes).decode("utf-8")
+    # shuffle the list and try up to len(images) attempts
+    urls = Images_Url[:] 
+    random.shuffle(urls)
 
-        content_type = response.headers.get("Content-Type", "image/png")
-        mime = content_type.split(";")[0].strip()
-        if "/" in mime:
-            img_type = mime.split("/")[1]
-        else:
-            img_type = "png"
+    last_exc = None
+    for url in urls:
+        try:
+            resp = _session.get(url, timeout=(5, 20), stream=True, allow_redirects=True)
+            resp.raise_for_status()
 
-        base64_data = f"data:image/{img_type};base64,{encoded}"
-        return base64_data
+            # read all content reliably
+            chunks = []
+            for chunk in resp.iter_content(8192):
+                if chunk:
+                    chunks.append(chunk)
+            img_bytes = b"".join(chunks)
+            if not img_bytes:
+                raise ValueError("empty response body")
 
-    except Exception as e:
-        print("get_random_image_base64 error:", repr(e), "url:", url)
-        return None
+            content_type = resp.headers.get("Content-Type", "image/png")
+            mime = content_type.split(";")[0].strip()
+            if "/" in mime:
+                img_type = mime.split("/")[1]
+            else:
+                img_type = "png"
 
+            encoded = base64.b64encode(img_bytes).decode("utf-8")
+            return f"data:image/{img_type};base64,{encoded}"
+
+        except (ProtocolError, NewConnectionError, RequestException, ValueError) as e:
+            last_exc = e
+            # optional: print or use logging
+            print("get_random_image_base64 error:", repr(e), "url:", url)
+            # try next URL
+
+    # all attempts failed — fallback to a tiny transparent 1x1 PNG data URI
+    print("get_random_image_base64: all image fetch attempts failed, returning fallback. last_exc:", repr(last_exc))
+    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
 
 def load_facts():
     try:
