@@ -31,7 +31,6 @@ from urllib3.util.retry import Retry
 from urllib3.exceptions import ProtocolError, NewConnectionError
 from requests.exceptions import RequestException
 
-# keep Images_Url defined somewhere above
 
 _session = None
 def _build_session():
@@ -56,7 +55,6 @@ def get_random_image_base64():
     if _session is None:
         _session = _build_session()
 
-    # shuffle the list and try up to len(images) attempts
     urls = Images_Url[:] 
     random.shuffle(urls)
 
@@ -66,7 +64,7 @@ def get_random_image_base64():
             resp = _session.get(url, timeout=(5, 20), stream=True, allow_redirects=True)
             resp.raise_for_status()
 
-            # read all content reliably
+            
             chunks = []
             for chunk in resp.iter_content(8192):
                 if chunk:
@@ -87,13 +85,8 @@ def get_random_image_base64():
 
         except (ProtocolError, NewConnectionError, RequestException, ValueError) as e:
             last_exc = e
-            # optional: print or use logging
-            print("get_random_image_base64 error:", repr(e), "url:", url)
-            # try next URL
-
-    # all attempts failed — fallback to a tiny transparent 1x1 PNG data URI
-    print("get_random_image_base64: all image fetch attempts failed, returning fallback. last_exc:", repr(last_exc))
-    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
+            
+    return none
 
 def load_facts():
     try:
