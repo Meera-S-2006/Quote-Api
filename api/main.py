@@ -2,20 +2,24 @@ import os
 import json
 import random
 import time
+import base64
+import requests
+from io import BytesIO
 from xml.sax.saxutils import escape
-from string import Template
 from flask import Flask, Response
-from api.Images import Images_Url
 
-app = Flask(__name__)   
+app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 FACTS_PATH = os.path.join(BASE_DIR, "facts.json")
 
-import base64
-import requests
-import random
-from io import BytesIO
+Images_Url = [
+    "https://files.catbox.moe/qp1n7u.png",
+    "https://files.catbox.moe/6bl2sp.png",
+    "https://files.catbox.moe/wa4kvk.png",
+    "https://files.catbox.moe/uadn7t.png",
+    "https://files.catbox.moe/weot47.png",
+]
 
 
 def get_random_image_base64():
@@ -25,21 +29,20 @@ def get_random_image_base64():
         response.raise_for_status()
 
         img_bytes = response.content
-
         encoded = base64.b64encode(img_bytes).decode("utf-8")
 
         content_type = response.headers.get("Content-Type", "image/png")
-        if "/" in content_type:
-            _, img_type = content_type.split("/")
+        mime = content_type.split(";")[0].strip()
+        if "/" in mime:
+            img_type = mime.split("/")[1]
         else:
             img_type = "png"
 
         base64_data = f"data:image/{img_type};base64,{encoded}"
-
         return base64_data
 
     except Exception as e:
-        print("Error:", e)
+        print("get_random_image_base64 error:", repr(e), "url:", url)
         return None
 
 
@@ -58,28 +61,43 @@ def load_facts():
             facts = [str(x) for x in facts]
             return facts or ["No facts available."]
     except Exception as exc:
+        print("load_facts error:", repr(exc))
         return [f"Could not load facts: {str(exc)}"]
 
-
-from string import Template
-from xml.sax.saxutils import escape
 
 def make_svg(text):
     t = escape(text)
     Png = get_random_image_base64()
-    
-    return f'''<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="250" viewBox="0 0 760 250">
 
+    if Png:
+        image_element = f'''
+  <g transform="translate(600, 20) scale(0.9)">
+    <image
+        href="{Png}"
+        xlink:href="{Png}"
+        x="0"
+        y="0"
+        width="80"
+        height="80"
+        preserveAspectRatio="xMidYMid slice"
+    />
+  </g>'''
+    else:
+        image_element = '''
+  <g transform="translate(600, 20) scale(0.9)">
+    <rect x="0" y="0" width="80" height="80" rx="8" fill="#f0f0f0" stroke="#ddd"/>
+    <text x="40" y="46" font-size="12" text-anchor="middle" fill="#999">no image</text>
+  </g>'''
+
+    svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="760" height="250" viewBox="0 0 760 250">
   <defs>
-
-    
     <linearGradient id="cuteGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#ffe5f1"/>
       <stop offset="100%" stop-color="#e3f2ff"/>
     </linearGradient>
 
-    
     <radialGradient id="blobPink" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#ffd5f7"/>
       <stop offset="100%" stop-color="#ffd5f700"/>
@@ -90,7 +108,6 @@ def make_svg(text):
       <stop offset="100%" stop-color="#d6efff00"/>
     </radialGradient>
 
-    
     <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="blur"/>
       <feOffset dx="0" dy="6" result="offsetBlur"/>
@@ -102,7 +119,6 @@ def make_svg(text):
       </feMerge>
     </filter>
 
-    
     <style>
       .fadeIn {{
         opacity: 0;
@@ -121,47 +137,30 @@ def make_svg(text):
         to {{ opacity: 1; transform: scale(1.3); }}
       }}
     </style>
-
   </defs>
 
-  
   <rect width="100%" height="100%" rx="38"
         fill="url(#cuteGrad)" filter="url(#softShadow)"/>
 
-  
   <circle cx="150" cy="75" r="95" fill="url(#blobPink)" opacity="0.55"/>
   <circle cx="620" cy="200" r="130" fill="url(#blobBlue)" opacity="0.55"/>
 
-  
   <text x="710" y="50" class="sparkle" font-size="26">✨</text>
   <text x="60" y="240" class="sparkle" font-size="24">✨</text>
   <text x="640" y="90" class="sparkle" font-size="22">⭐</text>
 
-  
-
   <text x="680" y="230" font-size="26" opacity="0.85">💗</text>
 
-  
-
-<g transform="translate(600, 20) scale(0.9)">
-    <image 
-        href="{Png}"
-        x="0"
-        y="0"
-        width="80"
-        height="80"
-    />
-</g>
+  {image_element}
 
   <text x="48" y="64"
         font-size="28"
         font-weight="700"
         font-family="'Poppins','Segoe UI', system-ui"
         fill="#ff66a8">
-     Random Quote 
+     Random Quote
   </text>
 
-  
   <foreignObject x="48" y="105" width="664" height="150" class="fadeIn">
     <div xmlns="http://www.w3.org/1999/xhtml"
       style="font-family:'Poppins','Segoe UI', system-ui;
@@ -169,14 +168,15 @@ def make_svg(text):
       <p style="margin:0; font-weight:500;">{t}</p>
     </div>
   </foreignObject>
-
 </svg>'''
+    return svg
+
 
 @app.route("/", methods=["GET"])
 @app.route("/Fact", methods=["GET"])
 def random_fact_root():
     facts = load_facts()
-    fact = random.choice(facts)
+    fact = random.choice(facts) if facts else "No facts available."
     svg = make_svg(fact)
 
     res = Response(svg, mimetype="image/svg+xml")
@@ -184,7 +184,8 @@ def random_fact_root():
     res.headers["Pragma"] = "no-cache"
     res.headers["Expires"] = "0"
     res.headers["ETag"] = str(time.time())
-
     return res
 
 
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
