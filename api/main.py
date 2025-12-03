@@ -61,7 +61,7 @@ def get_random_image_base64():
     last_exc = None
     for url in urls:
         try:
-            resp = _session.get(url, timeout=(5, 20), stream=True, allow_redirects=True)
+            resp = _session.get(url, timeout=(20, 40), stream=True, allow_redirects=True)
             resp.raise_for_status()
 
             
