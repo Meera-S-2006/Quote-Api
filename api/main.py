@@ -162,14 +162,7 @@ def make_svg(text):
     </filter>
 
     <style>
-      .fadeIn {{
-        opacity: 0;
-        animation: fadeIn 1.4s ease forwards 0.3s;
-      }}
-      @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(6px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-      }}
+      
 
       .sparkle {{
         animation: twinkle 1.8s infinite ease-in-out alternate;
@@ -203,7 +196,7 @@ def make_svg(text):
      Random Quote
   </text>
 
-  <foreignObject x="48" y="105" width="664" height="150" class="fadeIn">
+  <foreignObject x="48" y="105" width="664" height="150" >
     <div xmlns="http://www.w3.org/1999/xhtml"
       style="font-family:'Poppins','Segoe UI', system-ui;
              font-size:22px; color:#444; line-height:1.45; word-wrap:break-word;">
